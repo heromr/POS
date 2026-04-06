@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useStore } from '@/lib/store-context'
 import { formatIQD, Transaction } from '@/lib/data'
 import { Button } from '@/components/ui/button'
@@ -39,6 +39,33 @@ export function CheckoutModal({ open, onClose, subtotal, discount, total, onSucc
 
   const tax = Math.round(total * (settings.taxRate / 100))
   const grandTotal = total + tax
+
+  // ── Enter key: confirm payment or close receipt ───────────────────────
+  // Attached to the window only while the modal is open. We skip the press
+  // if focus is inside the cash-amount <input> so the user can type freely.
+  useEffect(() => {
+    if (!open) return
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Enter') return
+      // If focus is in any input, let the input handle it normally
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+
+      e.preventDefault()
+      if (completed) {
+        // Receipt screen → close modal
+        handleClose()
+      } else if (canCheckout) {
+        // Payment screen → confirm
+        handleCheckout()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, completed, canCheckout])
 
   function handleCheckout() {
     const now = new Date()
