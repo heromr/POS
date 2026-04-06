@@ -20,11 +20,19 @@ type Props = {
   product?: Product | null
 }
 
+// 500 KB expressed as base64 characters (each base64 char ≈ 0.75 bytes,
+// so 500 000 bytes / 0.75 ≈ 666 667 chars). We use 666 000 as the hard limit.
+const IMAGE_HARD_LIMIT_CHARS = 666_000
+// 200 KB — recommended upper bound shown as a UI hint
+const IMAGE_SOFT_LIMIT_CHARS = Math.round(200_000 / 0.75) // ≈ 266 667
+
 export function ProductForm({ open, onClose, product }: Props) {
   const { addProduct, updateProduct, categories, settings } = useStore()
   const isEdit = !!product
   const isRTL = settings.rtl
   const imageInputRef = useRef<HTMLInputElement>(null)
+
+  const [imageError, setImageError] = useState('')
 
   const [form, setForm] = useState({
     nameAr: '',
@@ -58,6 +66,7 @@ export function ProductForm({ open, onClose, product }: Props) {
         image: '',
       })
     }
+    setImageError('')
   }, [product, open, categories])
 
   function set(field: string, value: string) {
@@ -68,12 +77,35 @@ export function ProductForm({ open, onClose, product }: Props) {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => set('image', reader.result as string)
+    reader.onload = () => {
+      const b64 = reader.result as string
+      if (b64.length > IMAGE_HARD_LIMIT_CHARS) {
+        setImageError(
+          isRTL
+            ? 'الصورة كبيرة جداً (الحد الأقصى 500 كيلوبايت). الرجاء اختيار صورة أصغر.'
+            : 'Image is too large (max 500 KB). Please choose a smaller image.'
+        )
+        // Reset file input so the same file can be re-selected after resizing
+        if (imageInputRef.current) imageInputRef.current.value = ''
+        return
+      }
+      setImageError('')
+      set('image', b64)
+    }
     reader.readAsDataURL(file)
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // Final guard: block save if image exceeds hard limit
+    if (form.image && form.image.length > IMAGE_HARD_LIMIT_CHARS) {
+      setImageError(
+        isRTL
+          ? 'الصورة كبيرة جداً (الحد الأقصى 500 كيلوبايت). الرجاء اختيار صورة أصغر.'
+          : 'Image is too large (max 500 KB). Please choose a smaller image.'
+      )
+      return
+    }
     const data = {
       nameAr: form.nameAr,
       nameEn: form.nameEn,
@@ -173,11 +205,21 @@ export function ProductForm({ open, onClose, product }: Props) {
                 <img src={form.image} alt="product" className="w-full h-full object-cover" />
                 <button
                   type="button"
-                  onClick={() => set('image', '')}
+                  onClick={() => { set('image', ''); setImageError('') }}
                   className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive/80 text-white flex items-center justify-center"
                 >
                   <X className="w-3 h-3" />
                 </button>
+                {/* Show size of currently loaded image */}
+                <span className={`absolute bottom-1 left-1 text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                  form.image.length > IMAGE_HARD_LIMIT_CHARS
+                    ? 'bg-destructive/80 text-white'
+                    : form.image.length > IMAGE_SOFT_LIMIT_CHARS
+                      ? 'bg-amber-500/80 text-white'
+                      : 'bg-black/50 text-white'
+                }`}>
+                  {Math.round(form.image.length * 0.75 / 1024)} KB
+                </span>
               </div>
             ) : (
               <button
@@ -196,6 +238,16 @@ export function ProductForm({ open, onClose, product }: Props) {
               className="hidden"
               onChange={handleImageChange}
             />
+            {/* Size guidance note */}
+            <p className="text-[11px] text-muted-foreground">
+              {isRTL
+                ? 'الحجم الموصى به: 200 كيلوبايت كحد أقصى. الحد المطلق: 500 كيلوبايت.'
+                : 'Max recommended: 200 KB. Hard limit: 500 KB.'}
+            </p>
+            {/* Validation error */}
+            {imageError && (
+              <p className="text-xs text-destructive font-medium">{imageError}</p>
+            )}
           </div>
         </form>
 
