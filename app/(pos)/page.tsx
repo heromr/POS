@@ -17,6 +17,7 @@ import {
   BadgePercent,
   Search,
   PackageX,
+  Keyboard,
 } from 'lucide-react'
 
 export default function CashierPage() {
@@ -34,6 +35,43 @@ export default function CashierPage() {
   useEffect(() => {
     barcodeRef.current?.focus()
   }, [])
+
+  // ── Keyboard shortcuts ────────────────────────────────────────────────
+  // F2  → focus barcode input
+  // F4  → open checkout (cart must be non-empty)
+  // Escape is handled natively by shadcn Dialog via onOpenChange
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      // Never steal keypresses while the user is actively typing
+      const tag = (e.target as HTMLElement).tagName
+      const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+
+      if (e.key === 'F2') {
+        e.preventDefault()
+        barcodeRef.current?.focus()
+        return
+      }
+
+      if (e.key === 'F4') {
+        e.preventDefault()
+        // Only open if cart has items and modal is not already open
+        if (cart.length > 0 && !checkoutOpen) {
+          setCheckoutOpen(true)
+        }
+        return
+      }
+
+      // Escape: close checkout if open (shadcn also does this, but we sync
+      // our state explicitly in case the dialog is open without shadcn knowing)
+      if (e.key === 'Escape' && !isTyping) {
+        if (checkoutOpen) setCheckoutOpen(false)
+        return
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [cart.length, checkoutOpen])
 
   function handleBarcodeSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -101,10 +139,22 @@ export default function CashierPage() {
     noResults: isRTL ? 'لا توجد منتجات مطابقة' : 'No matching products',
     products: isRTL ? 'المنتجات' : 'Products',
     cart: isRTL ? 'السلة' : 'Cart',
+    shortcuts: isRTL ? 'اختصارات لوحة المفاتيح' : 'Keyboard shortcuts',
   }
 
+  // Shortcut hint pills shown in the bottom bar
+  const shortcuts = [
+    { key: 'F2',     desc: isRTL ? 'تركيز الباركود'  : 'Focus barcode'    },
+    { key: 'F4',     desc: isRTL ? 'فتح الدفع'        : 'Open checkout'    },
+    { key: 'Enter',  desc: isRTL ? 'تأكيد الدفع'      : 'Confirm payment'  },
+    { key: 'Escape', desc: isRTL ? 'إغلاق النافذة'    : 'Close modal'      },
+  ]
+
   return (
-    <div className="flex h-full overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="flex flex-col h-full overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
+
+      {/* ── Main content row (products + cart) ── */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
 
       {/* ── Left: Products panel ── */}
       <div className="flex flex-col flex-1 min-w-0 border-e border-border overflow-hidden">
@@ -410,6 +460,25 @@ export default function CashierPage() {
             {t.checkout} &rarr;
           </Button>
         </div>
+      </div>
+
+      </div>{/* end main content row */}
+
+      {/* ── Keyboard shortcut hint bar ── */}
+      <div className="shrink-0 border-t border-border bg-card/60 px-4 py-1.5 flex items-center gap-3 flex-wrap"
+           dir={isRTL ? 'rtl' : 'ltr'}>
+        <span className="flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
+          <Keyboard className="w-3 h-3" />
+          {t.shortcuts}:
+        </span>
+        {shortcuts.map(({ key, desc }) => (
+          <span key={key} className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-border bg-secondary font-mono text-[10px] text-foreground leading-none">
+              {key}
+            </kbd>
+            <span>{desc}</span>
+          </span>
+        ))}
       </div>
 
       <CheckoutModal
