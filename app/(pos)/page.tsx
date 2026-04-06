@@ -39,12 +39,22 @@ export default function CashierPage() {
     e.preventDefault()
     const term = barcode.trim()
     if (!term) return
-    const found = addToCart(term)
-    if (!found) {
+    // Check product existence and stock before attempting add
+    const product = products.find((p) => p.barcode === term)
+    if (!product) {
       setErrorMsg(isRTL ? 'المنتج غير موجود' : 'Product not found')
       setTimeout(() => setErrorMsg(''), 2000)
+    } else if (product.stock === 0) {
+      setErrorMsg(isRTL ? 'نفد المخزون' : 'Out of stock')
+      setTimeout(() => setErrorMsg(''), 2000)
     } else {
-      setErrorMsg('')
+      const added = addToCart(term)
+      if (!added) {
+        setErrorMsg(isRTL ? 'وصلت إلى الحد الأقصى للمخزون' : 'Maximum stock reached')
+        setTimeout(() => setErrorMsg(''), 2000)
+      } else {
+        setErrorMsg('')
+      }
     }
     setBarcode('')
     barcodeRef.current?.focus()
@@ -186,9 +196,21 @@ export default function CashierPage() {
                       </p>
                       <p className="text-xs text-primary font-bold">{formatIQD(product.price)}</p>
 
-                      {inCart > 0 && (
-                        <p className="text-[10px] text-muted-foreground">
-                          {isRTL ? `في السلة: ${inCart}` : `In cart: ${inCart}`}
+                      {/* Stock indicator */}
+                      {!outOfStock && (
+                        <p className={cn(
+                          'text-[10px]',
+                          product.stock <= 3 ? 'text-destructive font-semibold' : 'text-muted-foreground'
+                        )}>
+                          {isRTL
+                            ? `المخزون: ${product.stock}`
+                            : `Stock: ${product.stock}`}
+                          {inCart > 0 && ` (${isRTL ? 'في السلة' : 'cart'}: ${inCart})`}
+                        </p>
+                      )}
+                      {inCart > 0 && inCart >= product.stock && (
+                        <p className="text-[10px] text-amber-500 font-semibold">
+                          {isRTL ? 'الحد الأقصى' : 'Max reached'}
                         </p>
                       )}
                     </div>
@@ -197,15 +219,19 @@ export default function CashierPage() {
                     <div className="px-2 pb-2">
                       <button
                         onClick={() => !outOfStock && handleAddProduct(product)}
-                        disabled={outOfStock}
+                        disabled={outOfStock || inCart >= product.stock}
                         className={cn(
                           'w-full rounded-lg py-1.5 text-xs font-semibold transition-colors',
-                          outOfStock
+                          outOfStock || inCart >= product.stock
                             ? 'bg-secondary text-muted-foreground cursor-not-allowed'
                             : 'bg-primary text-primary-foreground hover:bg-primary/90'
                         )}
                       >
-                        {outOfStock ? t.outOfStock : t.addToCart}
+                        {outOfStock
+                          ? t.outOfStock
+                          : inCart >= product.stock
+                            ? (isRTL ? 'الحد الأقصى' : 'Max stock')
+                            : t.addToCart}
                       </button>
                     </div>
                   </div>
@@ -285,7 +311,13 @@ export default function CashierPage() {
                       <span className="w-5 text-center text-xs font-bold">{item.quantity}</span>
                       <button
                         onClick={() => updateQty(item.product.id, 1)}
-                        className="w-6 h-6 rounded bg-secondary hover:bg-accent flex items-center justify-center transition-colors"
+                        disabled={item.quantity >= item.product.stock}
+                        className={cn(
+                          'w-6 h-6 rounded flex items-center justify-center transition-colors',
+                          item.quantity >= item.product.stock
+                            ? 'bg-secondary text-muted-foreground cursor-not-allowed opacity-50'
+                            : 'bg-secondary hover:bg-accent'
+                        )}
                       >
                         <Plus className="w-3 h-3" />
                       </button>
