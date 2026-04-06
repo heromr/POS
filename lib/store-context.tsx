@@ -39,6 +39,22 @@ function lsSet(key: string, value: unknown): void {
   }
 }
 
+// Products-specific setter: surfaces a quota error to the user because
+// base64 images are large and silently dropping them would be confusing.
+function lsSetProducts(products: Product[]): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(LS_PRODUCTS, JSON.stringify(products))
+  } catch (err) {
+    if (
+      err instanceof DOMException &&
+      (err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED')
+    ) {
+      alert('Image could not be saved — storage full. Try a smaller image.')
+    }
+  }
+}
+
 // ── Context type ───────────────────────────────────────────────────────────
 type StoreContextType = {
   // Categories
@@ -95,7 +111,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // ── Persist to localStorage whenever state changes (after hydration) ───
   useEffect(() => { if (hydrated.current) lsSet(LS_CATEGORIES,   categories)   }, [categories])
-  useEffect(() => { if (hydrated.current) lsSet(LS_PRODUCTS,     products)     }, [products])
+  useEffect(() => { if (hydrated.current) lsSetProducts(products) }, [products])
   useEffect(() => { if (hydrated.current) lsSet(LS_CART,         cart)         }, [cart])
   useEffect(() => { if (hydrated.current) lsSet(LS_TRANSACTIONS, transactions) }, [transactions])
   useEffect(() => { if (hydrated.current) lsSet(LS_SETTINGS,     settings)     }, [settings])
