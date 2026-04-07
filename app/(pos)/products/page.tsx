@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useStore } from '@/lib/store-context'
 import { formatIQD, Product } from '@/lib/data'
 import { ProductForm } from '@/components/pos/product-form'
+import { ProductImportModal } from '@/components/pos/product-import-modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -14,12 +15,14 @@ import {
   Trash2,
   AlertTriangle,
   Package,
+  Upload,
 } from 'lucide-react'
 
 export default function ProductsPage() {
   const { products, deleteProduct, settings, categories } = useStore()
   const [search, setSearch] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const isRTL = settings.rtl
 
