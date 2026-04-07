@@ -1,7 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { useStore } from '@/lib/store-context'
 import { formatIQD } from '@/lib/data'
+import { CloseDayModal } from '@/components/pos/close-day-modal'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
   BarChart,
@@ -17,6 +20,7 @@ import {
   ShoppingBag,
   AlertTriangle,
   Trophy,
+  LockKeyhole,
 } from 'lucide-react'
 
 function StatCard({
@@ -48,10 +52,15 @@ function StatCard({
 
 export default function DashboardPage() {
   const { transactions, products, settings } = useStore()
+  const [closeDayOpen, setCloseDayOpen] = useState(false)
   const isRTL = settings.rtl
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+
+  // YYYY-MM-DD key for today
+  const todayStr = today.toISOString().slice(0, 10)
+  const isTodayClosed = settings.closedDays?.includes(todayStr) ?? false
 
   const todaysTxns = transactions.filter((t) => new Date(t.date) >= today)
   const todaysRevenue = todaysTxns.reduce((s, t) => s + t.total, 0)
@@ -94,11 +103,33 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto p-6 gap-6" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div>
-        <h1 className="text-xl font-bold">{isRTL ? 'لوحة التحكم' : 'Dashboard'}</h1>
-        <p className="text-sm text-muted-foreground">
-          {today.toLocaleDateString(isRTL ? 'ar-IQ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold">{isRTL ? 'لوحة التحكم' : 'Dashboard'}</h1>
+          <p className="text-sm text-muted-foreground">
+            {today.toLocaleDateString(isRTL ? 'ar-IQ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {isTodayClosed && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-semibold border border-destructive/20">
+              <LockKeyhole className="w-3.5 h-3.5" />
+              {isRTL ? 'اليوم مغلق' : 'Day Closed'}
+            </span>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => setCloseDayOpen(true)}
+            disabled={isTodayClosed}
+            className={cn(
+              'gap-2 border-border text-sm font-semibold',
+              isTodayClosed && 'opacity-50 cursor-not-allowed'
+            )}
+          >
+            <LockKeyhole className="w-4 h-4" />
+            {isRTL ? 'إغلاق اليوم' : 'Close Day'}
+          </Button>
+        </div>
       </div>
 
       {/* Stat cards */}
@@ -169,8 +200,7 @@ export default function DashboardPage() {
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-border">
           <h2 className="font-semibold">{isRTL ? 'آخر المعاملات' : 'Recent Transactions'}</h2>
-        </div>
-        <table className="w-full text-sm">
+        </div>        <table className="w-full text-sm">
           <thead>
             <tr className="bg-secondary border-b border-border text-muted-foreground text-xs">
               <th className="px-5 py-2.5 font-medium text-left">{isRTL ? 'الرقم' : 'ID'}</th>
@@ -184,9 +214,9 @@ export default function DashboardPage() {
             {recent.map((txn) => (
               <tr key={txn.id} className="border-b border-border last:border-0 hover:bg-secondary/40 transition-colors">
                 <td className="px-5 py-3 font-mono text-xs text-muted-foreground">{txn.id.slice(0, 12)}...</td>
-                <td className="px-5 py-3 text-xs">
-                  <p>{new Date(txn.date).toLocaleDateString()}</p>
-                  <p className="text-muted-foreground">{new Date(txn.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <td className="px-5 py-3 text-xs" suppressHydrationWarning>
+                  <p suppressHydrationWarning>{new Date(txn.date).toLocaleDateString()}</p>
+                  <p className="text-muted-foreground" suppressHydrationWarning>{new Date(txn.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                 </td>
                 <td className="px-5 py-3 text-xs text-muted-foreground hidden md:table-cell">
                   {txn.items.slice(0, 2).map(i => i.nameEn).join(', ')}
@@ -206,6 +236,12 @@ export default function DashboardPage() {
           </tbody>
         </table>
       </div>
+
+      <CloseDayModal
+        open={closeDayOpen}
+        onClose={() => setCloseDayOpen(false)}
+        dateStr={todayStr}
+      />
     </div>
   )
 }

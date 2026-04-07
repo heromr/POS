@@ -6,7 +6,7 @@ import { Category } from '@/lib/data'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { Save, Globe, Store, Receipt, Tag, Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+import { Save, Globe, Store, Receipt, Tag, Plus, Pencil, Trash2, Check, X, LockKeyhole } from 'lucide-react'
 
 export default function SettingsPage() {
   const { settings, updateSettings, categories, addCategory, updateCategory, deleteCategory } = useStore()
@@ -207,6 +207,45 @@ export default function SettingsPage() {
                   className="bg-input border-border"
                 />
               </div>
+            </div>
+          </section>
+
+          {/* Close Day Enforcement */}
+          <section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4">
+            <div className="flex items-center gap-2 font-semibold text-sm">
+              <LockKeyhole className="w-4 h-4 text-primary" />
+              {isRTL ? 'إعدادات إغلاق اليوم' : 'Day Close Settings'}
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-medium">
+                  {isRTL ? 'منع المبيعات بعد إغلاق اليوم' : 'Block sales after closing the day'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isRTL
+                    ? 'عند التفعيل، لا يمكن إجراء مبيعات جديدة بعد إغلاق اليوم.'
+                    : 'When enabled, no new sales can be made after the day is closed.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.enforceDayClose ?? true}
+                onClick={() => set('enforceDayClose', !(form.enforceDayClose ?? true))}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 transition-colors focus:outline-none',
+                  (form.enforceDayClose ?? true)
+                    ? 'bg-primary border-primary'
+                    : 'bg-secondary border-border'
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform mt-0.5',
+                    (form.enforceDayClose ?? true) ? 'translate-x-5' : 'translate-x-0.5'
+                  )}
+                />
+              </button>
             </div>
           </section>
 

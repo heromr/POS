@@ -18,6 +18,7 @@ import {
   Search,
   PackageX,
   Keyboard,
+  LockKeyhole,
 } from 'lucide-react'
 
 export default function CashierPage() {
@@ -30,6 +31,12 @@ export default function CashierPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const barcodeRef = useRef<HTMLInputElement>(null)
   const isRTL = settings.rtl
+
+  // Determine whether today's day has been closed
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const isDayClosed =
+    (settings.enforceDayClose ?? true) &&
+    (settings.closedDays?.includes(todayStr) ?? false)
 
   // Keep barcode input focused unless the user is typing in search
   useEffect(() => {
@@ -75,6 +82,11 @@ export default function CashierPage() {
 
   function handleBarcodeSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (isDayClosed) {
+      setErrorMsg(isRTL ? 'اليوم مغلق — لا يمكن إجراء مبيعات جديدة' : 'Day is closed — no new sales allowed')
+      setTimeout(() => setErrorMsg(''), 3000)
+      return
+    }
     const term = barcode.trim()
     if (!term) return
     // Check product existence and stock before attempting add
@@ -161,6 +173,12 @@ export default function CashierPage() {
 
         {/* Barcode + search bar */}
         <div className="px-4 py-3 border-b border-border bg-card shrink-0 flex flex-col gap-2">
+          {isDayClosed && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold">
+              <LockKeyhole className="w-3.5 h-3.5 shrink-0" />
+              {isRTL ? 'اليوم مغلق — لا يمكن إجراء مبيعات جديدة' : 'Day is closed — new sales are not allowed'}
+            </div>
+          )}
           <form onSubmit={handleBarcodeSubmit} className="flex gap-2">
             <div className="relative flex-1">
               <ScanBarcode
@@ -454,7 +472,7 @@ export default function CashierPage() {
 
           <Button
             onClick={() => setCheckoutOpen(true)}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || isDayClosed}
             className="w-full h-11 text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
           >
             {t.checkout} &rarr;

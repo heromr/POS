@@ -63,6 +63,10 @@ export type Settings = {
   rtl: boolean
   taxRate: number
   receiptFooter: string
+  /** ISO date strings (YYYY-MM-DD) of days that have been closed */
+  closedDays: string[]
+  /** When true, blocks new sales after the day has been closed */
+  enforceDayClose: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -73,6 +77,8 @@ export const DEFAULT_SETTINGS: Settings = {
   rtl: false,
   taxRate: 0,
   receiptFooter: 'شكراً لزيارتكم — Thank you for your visit!',
+  closedDays: [],
+  enforceDayClose: true,
 }
 
 export const MOCK_PRODUCTS: Product[] = [

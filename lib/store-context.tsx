@@ -84,6 +84,7 @@ type StoreContextType = {
   // Settings
   settings: Settings
   updateSettings: (s: Partial<Settings>) => void
+  closeDay: (dateStr: string) => void
 }
 
 const StoreContext = createContext<StoreContextType | null>(null)
@@ -230,6 +231,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSettings((prev) => ({ ...prev, ...s }))
   }, [])
 
+  const closeDay = useCallback((dateStr: string) => {
+    setSettings((prev) => {
+      if (prev.closedDays.includes(dateStr)) return prev
+      return { ...prev, closedDays: [...prev.closedDays, dateStr] }
+    })
+  }, [])
+
   const refundTransaction = useCallback((transactionId: string) => {
     setTransactions((prev) => {
       const original = prev.find((t) => t.id === transactionId)
@@ -307,6 +315,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         refundTransaction,
         settings,
         updateSettings,
+        closeDay,
       }}
     >
       {children}
