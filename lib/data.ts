@@ -47,6 +47,12 @@ export type Transaction = {
   paymentMethod: PaymentMethod
   amountPaid: number
   change: number
+  /** True when this transaction has been fully refunded */
+  refunded?: boolean
+  /** ID of the refund transaction created for this sale */
+  refundId?: string
+  /** If this IS a refund record, the ID of the original transaction it reverses */
+  originalTransactionId?: string
 }
 
 export type Settings = {

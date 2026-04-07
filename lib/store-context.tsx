@@ -79,6 +79,7 @@ type StoreContextType = {
   // Transactions
   transactions: Transaction[]
   addTransaction: (t: Transaction) => void
+  refundTransaction: (transactionId: string) => void
 
   // Settings
   settings: Settings
@@ -229,6 +230,62 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSettings((prev) => ({ ...prev, ...s }))
   }, [])
 
+  const refundTransaction = useCallback((transactionId: string) => {
+    setTransactions((prev) => {
+      const original = prev.find((t) => t.id === transactionId)
+      if (!original || original.refunded) return prev
+
+      const refundId = `RFD-${Date.now()}`
+
+      const refundRecord: Transaction = {
+        id: refundId,
+        date: new Date().toISOString(),
+        items: original.items.map((item) => ({
+          ...item,
+          quantity: -item.quantity,
+          total: -item.total,
+        })),
+        subtotal: -original.subtotal,
+        discount: -original.discount,
+        tax: -original.tax,
+        total: -original.total,
+        paymentMethod: original.paymentMethod,
+        amountPaid: -original.amountPaid,
+        change: -original.change,
+        originalTransactionId: transactionId,
+      }
+
+      const next = prev.map((t) =>
+        t.id === transactionId ? { ...t, refunded: true, refundId } : t
+      )
+      next.unshift(refundRecord)
+      lsSet(LS_TRANSACTIONS, next)
+      return next
+    })
+
+    // Restore stock for every item in the original transaction
+    setTransactions((prev) => {
+      const original = prev.find((t) => t.id === transactionId)
+      if (!original) return prev
+      setProducts((prevProducts) =>
+        prevProducts.map((p) => {
+          const refundedItem = original.items.find(
+            (item) => item.nameEn === p.nameEn || item.nameAr === p.nameAr
+          )
+          if (!refundedItem) return p
+          // quantity on the original is positive; refund record is negative — use Math.abs
+          const qty = Math.abs(refundedItem.quantity)
+          return {
+            ...p,
+            stock: p.stock + qty,
+            soldCount: Math.max(0, p.soldCount - qty),
+          }
+        })
+      )
+      return prev
+    })
+  }, [])
+
   return (
     <StoreContext.Provider
       value={{
@@ -247,6 +304,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         transactions,
         addTransaction,
+        refundTransaction,
         settings,
         updateSettings,
       }}
