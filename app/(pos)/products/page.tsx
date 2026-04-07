@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useStore } from '@/lib/store-context'
 import { formatIQD, Product } from '@/lib/data'
 import { ProductForm } from '@/components/pos/product-form'
+import { ProductImportModal } from '@/components/pos/product-import-modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -14,12 +15,14 @@ import {
   Trash2,
   AlertTriangle,
   Package,
+  Upload,
 } from 'lucide-react'
 
 export default function ProductsPage() {
   const { products, deleteProduct, settings, categories } = useStore()
   const [search, setSearch] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const isRTL = settings.rtl
 
@@ -67,10 +70,20 @@ export default function ProductsPage() {
               )}
             </p>
           </div>
-          <Button onClick={handleAdd} className="bg-primary text-primary-foreground gap-2 shrink-0">
-            <Plus className="w-4 h-4" />
-            {isRTL ? 'إضافة منتج' : 'Add Product'}
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setImportOpen(true)}
+              className="border-border gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              {isRTL ? 'استيراد المنتجات' : 'Import Products'}
+            </Button>
+            <Button onClick={handleAdd} className="bg-primary text-primary-foreground gap-2">
+              <Plus className="w-4 h-4" />
+              {isRTL ? 'إضافة منتج' : 'Add Product'}
+            </Button>
+          </div>
         </div>
         <div className="relative">
           <Search className={cn('absolute top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground', isRTL ? 'right-3' : 'left-3')} />
@@ -186,6 +199,11 @@ export default function ProductsPage() {
         open={formOpen}
         onClose={() => { setFormOpen(false); setEditProduct(null) }}
         product={editProduct}
+      />
+
+      <ProductImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
       />
     </div>
   )
