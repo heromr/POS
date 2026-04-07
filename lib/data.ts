@@ -5,6 +5,7 @@ export type Product = {
   barcode: string
   category: string
   price: number // IQD whole number
+  costPrice?: number // IQD whole number — optional, used for profit calculation
   stock: number
   soldCount: number
   image?: string // base64 or URL
@@ -39,7 +40,7 @@ export type PaymentMethod = 'cash' | 'card'
 export type Transaction = {
   id: string
   date: string // ISO string
-  items: { nameAr: string; nameEn: string; quantity: number; unitPrice: number; total: number }[]
+  items: { nameAr: string; nameEn: string; quantity: number; unitPrice: number; total: number; costPrice?: number }[]
   subtotal: number
   discount: number
   tax: number

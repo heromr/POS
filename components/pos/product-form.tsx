@@ -40,6 +40,7 @@ export function ProductForm({ open, onClose, product }: Props) {
     barcode: '',
     category: categories[0]?.nameEn ?? 'Grains',
     price: '',
+    costPrice: '',
     stock: '',
     image: '',
   })
@@ -52,6 +53,7 @@ export function ProductForm({ open, onClose, product }: Props) {
         barcode: product.barcode,
         category: product.category,
         price: product.price.toString(),
+        costPrice: product.costPrice?.toString() ?? '',
         stock: product.stock.toString(),
         image: product.image ?? '',
       })
@@ -62,6 +64,7 @@ export function ProductForm({ open, onClose, product }: Props) {
         barcode: '',
         category: categories[0]?.nameEn ?? 'Grains',
         price: '',
+        costPrice: '',
         stock: '',
         image: '',
       })
@@ -112,6 +115,7 @@ export function ProductForm({ open, onClose, product }: Props) {
       barcode: form.barcode,
       category: form.category,
       price: parseInt(form.price) || 0,
+      costPrice: form.costPrice.trim() !== '' ? parseInt(form.costPrice) : undefined,
       stock: parseInt(form.stock) || 0,
       image: form.image || undefined,
     }
@@ -124,12 +128,13 @@ export function ProductForm({ open, onClose, product }: Props) {
   }
 
   // Each field has both an English and Arabic label — Arabic is always shown in RTL mode
-  const fields: { labelEn: string; labelAr: string; field: string; type?: string; placeholder?: string }[] = [
-    { labelEn: 'Arabic Name',     labelAr: 'الاسم بالعربي',       field: 'nameAr',  placeholder: isRTL ? 'مثال: أرز بسمتي' : 'e.g. أرز بسمتي' },
-    { labelEn: 'English Name',    labelAr: 'الاسم بالإنجليزي',   field: 'nameEn',  placeholder: 'e.g. Basmati Rice 5kg' },
-    { labelEn: 'Barcode',         labelAr: 'الباركود',            field: 'barcode', placeholder: '6901234567890' },
-    { labelEn: 'Price (IQD)',     labelAr: 'السعر (د.ع)',         field: 'price',   type: 'number', placeholder: '5000' },
-    { labelEn: 'Stock Quantity',  labelAr: 'الكمية في المخزن',   field: 'stock',   type: 'number', placeholder: '50' },
+  const fields: { labelEn: string; labelAr: string; field: string; type?: string; placeholder?: string; optional?: boolean }[] = [
+    { labelEn: 'Arabic Name',        labelAr: 'الاسم بالعربي',        field: 'nameAr',    placeholder: isRTL ? 'مثال: أرز بسمتي' : 'e.g. أرز بسمتي' },
+    { labelEn: 'English Name',       labelAr: 'الاسم بالإنجليزي',    field: 'nameEn',    placeholder: 'e.g. Basmati Rice 5kg' },
+    { labelEn: 'Barcode',            labelAr: 'الباركود',             field: 'barcode',   placeholder: '6901234567890' },
+    { labelEn: 'Price (IQD)',        labelAr: 'السعر (د.ع)',          field: 'price',     type: 'number', placeholder: '5000' },
+    { labelEn: 'Cost Price (IQD)',   labelAr: 'سعر التكلفة (د.ع)',   field: 'costPrice', type: 'number', placeholder: isRTL ? 'اختياري' : 'Optional', optional: true },
+    { labelEn: 'Stock Quantity',     labelAr: 'الكمية في المخزن',    field: 'stock',     type: 'number', placeholder: '50' },
   ]
 
   const titleEn = isEdit ? 'Edit Product' : 'Add New Product'

@@ -78,6 +78,7 @@ export function CheckoutModal({ open, onClose, subtotal, discount, total, onSucc
         quantity: item.quantity,
         unitPrice: item.product.price,
         total: item.product.price * item.quantity,
+        costPrice: item.product.costPrice,
       })),
       subtotal,
       discount,
